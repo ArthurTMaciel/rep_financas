@@ -1,0 +1,626 @@
+---
+title: "Prova_Finanças2"
+author: "Arthur Maciel"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(PerformanceAnalytics)
+library(readxl)
+library(car)
+library(sn)
+library(tseries)
+library(GRS.test)
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+Ddsprova <- read_excel("Ddsprova.xlsx")#Lendo arquivo
+Ddsprova$Data <- as.Date(Ddsprova$Data)#transformando em data
+
+Fechamentos <- read_excel("Ddsprova.xlsx", sheet = 3)#fechamentos
+prepetr <- Fechamentos$PETR4#fechamentos das ações selecionadas
+prevale <-  Fechamentos$VALE3 
+```
+
+------------------------------1)A----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 1 letra a\\
+Escolha de período amostral
+\end{center}
+```
+O período amostral foi escolhido de forma com que a base de dados fosse o mais ampla possível dentro dos limites de relevância e de disponibilidade dos dados dos ativos. O período é aproximadamente de 2018 até 2023, sendo que os dados são medidos de forma diária. Além disso, esse periodo abrange antes, durante e após a pandemia, capturando portanto o movimento mais relevante no mercado dos últimos tempos, espera-se com isso capturar o movimento de recuperação da economia e poder modelar quais ativos tem maior possibilidade de genho nesse período pos recuperação.
+
+------------------------------1)B----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 1 letra b\\
+Séries de retornos
+\end{center}
+```
+As açoes escolhidas são Petrobrás e Vale
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(Ddsprova, aes(x = Data, y = PETR4)) +
+  geom_line() +
+  labs(x = "Data", y = "Valor", title = "Série Retornos PETR4") +
+  theme_update()
+retpetr <-Ddsprova$PETR4# criando objeto com os retornos
+table.Stats(retpetr)
+```
+
+Em termos de centralidade, tanto a mediana quanto a média aritmética são próximas de zero. Isso indica que, em média, os retornos da PETR4, como os da Vale, não apresentam uma tendência clara de crescimento ou queda.
+
+Ao considerar a dispersão dos retornos, observamos um desvio padrão relativamente baixo em relação à média. No caso da PETR4,como no da Vale, uma baixa dispersão sugere que os retornos não apresentam flutuações extremas ou volatilidade significativa. Isso pode ser interpretado como uma relativa estabilidade nos retornos da ação ao longo do período analisado.
+
+A assimetria negativa dos retornos, evidenciada por um valor de skewness de -0.0925, indica que a distribuição dos retornos possui uma cauda esquerda mais longa.Essa assimetria sugere que a PETR4 está mais propensa a experimentar quedas bruscas e acentuadas, em comparação com movimentos de alta igualmente expressivos.
+
+A curtose da distribuição dos retornos da PETR4, com um valor de kurtosis de 13.6721, é consideravelmente alta.Com uma curtose alta as caudas são mais pesadas, os retornos extremos, tanto positivos quanto negativos, são mais frequentes do que o esperado em uma distribuição normal. Ou seja, a PETR4 tem uma probabilidade maior de apresentar retornos extremos em comparação com uma distribuição normal.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(Ddsprova, aes(x = Data, y = VALE3)) +
+  geom_line() +
+  labs(x = "Data", y = "Valor", title = "Série Retornos VALE3") +
+  theme_update()#grafico da serie de retornos da vale
+retvale <- Ddsprova$VALE3# criando objeto com os retornos 
+table.Stats(retvale)
+```
+
+Em relação à centralidade dos retornos, tanto a mediana quanto a média aritmética são próximas de zero. Isso sugere que, em média, os retornos da VALE3 não apresentam uma tendência geral de crescimento ou queda significativa.
+
+Ao examinar a dispersão dos retornos, observamos que o desvio padrão é relativamente baixo em relação à média. Isso significa que os retornos da VALE3 têm uma variabilidade moderada em relação à média. Em outras palavras, os retornos não apresentam flutuações extremas ao longo da série analisada. Essa estabilidade pode ser um indicativo de menor volatilidade da ação.
+
+A assimetria negativa dos retornos indica que a distribuição possui uma cauda esquerda mais longa. Em suma, a ocorrência de retornos negativos mais extremos é mais pronunciada em comparação com retornos positivos mais extremos. Essa assimetria sugere que a VALE3 tem uma maior probabilidade de apresentar quedas bruscas e acentuadas, em comparação com movimentos de alta igualmente expressivos
+
+A curtose da distribuição dos retornos da VALE3 é significativamente alta. Isso indica que a distribuição tem caudas mais pesadas em relação a uma distribuição normal. Em termos práticos, isso implica que os retornos extremos, tanto positivos quanto negativos, são mais frequentes do que o esperado em uma distribuição normal.
+
+------------------------------1)C--------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 1 letra c\\
+Gráfico no tempo e estimação gráfica da distribuição dos retornos.
+\end{center}
+```
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+hist(retvale, breaks = 100)
+view(prevale)
+# Criar um data frame com os valores e o tempo
+df <- data.frame(tempo = seq_along(prevale), valor = prevale)
+
+# Criar o gráfico usando ggplot2
+ggplot(df, aes(x = tempo, y = valor)) +
+  geom_line() +
+  xlab("Tempo") +
+  ylab("Preço") +
+  ggtitle("Série Temporal VALE3") +
+  theme_update()
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+hist(retpetr, breaks = 100)
+view(prepetr)
+# Criar um data frame com os valores e o tempo
+df1 <- data.frame(tempo = seq_along(prepetr), valor = prepetr)
+
+# Criar o gráfico usando ggplot2
+ggplot(df1, aes(x = tempo, y = valor)) +
+  geom_line() +
+  xlab("Tempo") +
+  ylab("Preço") +
+  ggtitle("Série Temporal PETR4") +
+  theme_update()
+```
+
+------------------------------1)D------------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 1 letra d\\
+Hipótese de distribuições Gaussianas
+\end{center}
+```
+Cabe destacar quais são as hipoteses gaussianas para que possamos comparar com os resultados obtidos nas respectivas distribuições. Essas hipóteses são as seguintes:
+
+1.  Variáveis aleatórias independentes: A primeira hipótese é que as variáveis aleatórias observadas são independentes umas das outras. Isso significa que a ocorrência ou valor de uma variável não afeta a ocorrência ou valor das outras variáveis.
+
+2.  Distribuição unimodal: A segunda hipótese é que a distribuição é unimodal, ou seja, possui apenas um pico. Isso implica que a distribuição tem uma média e uma única moda.
+
+3.  Distribuição simétrica: A terceira hipótese é que a distribuição é simétrica em torno da média. Isso significa que a metade esquerda da distribuição é uma imagem espelhada da metade direita.
+
+4.  Média constante: A quarta hipótese é que a média da distribuição é constante e não varia com o tempo ou com outras variáveis.
+
+5.  Variância constante: A quinta hipótese é que a variância da distribuição é constante e não varia com o tempo ou com outras variáveis.
+
+Na série de retornos da PETR4 usaremos o teste de Shapiro para identificar se os retornos se distribuem de acordo com uma normal. O teste teve p-valor de 2.2e-16, concluindo-se que os retornos não seguem uma distribuição normal.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Teste de normalidade de Shapiro-Wilk
+tstnorm1 <- shapiro.test(retpetr)
+# Exibir o resultado do teste
+print(tstnorm1)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ ggplot(data.frame(x = retpetr), aes(x = x)) +
+   geom_histogram(aes(y = ..density..), bins = 300, fill = "lightblue", color = "black") +
+   stat_function(fun = dnorm, args = list(mean = mean(retpetr), sd = sd(retpetr)), color = "red", size = 1) +
+    labs(y = "Densidade") +
+  labs(x = "Retorno") +
+   ggtitle("Comparação Densidades Petr") +
+  theme_update()
+qqPlot(retpetr)
+```
+
+Outra ferramenta utilizada será a gráfica, o gráfico acima mostra a comparação da distribuição da PETR4 com relação a normal, temos uma curtose maior, mais peso nas cudas, e assimetria negativa. As hipoteses gaussianas não são válidas nessa série, sendo que as hipóteses de variância constante e distribuição simétrica não foram cumpridas. A hipótese de variância constante é quebrada, podemos ver isso no gráfico dos retornos apresentado na letra b, além disso existe assimetria na distribuição, como visto na tabela da letra b. Pelo gráfico dos quantis normais gerado pelo qqPlot podemos ver a diferença gritante nas caudas causada pela enorme curtuse.
+
+Nessa mesma linha temos a Vale, com consluões quase que idênticas, um p-valor de 2.2e-16 no teste de Shapiro, mostrando que não estamos falando de uma distribuição normal.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Teste de normalidade de Shapiro-Wilk
+tstnorm2 <- shapiro.test(retvale)
+
+# Exibir o resultado do teste
+print(tstnorm2)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ ggplot(data.frame(x = retvale), aes(x = x)) +
+   geom_histogram(aes(y = ..density..), bins = 300, fill = "lightblue", color = "black") +
+   stat_function(fun = dnorm, args = list(mean = mean(retpetr), sd = sd(retpetr)), color = "red", size = 1) +
+  labs(y = "Densidade") +
+  labs(x = "Retorno") +
+   ggtitle("Comparação Densidades Vale") +
+  theme_update()
+```
+
+Na representação gráfica temos a mesma conclusão, curtose alta e assimetria negativa. As hipoteses gaussianas também não se sustentam aqui, existe heterocedasticidade e assimetria na distribuição.
+
+```{r}
+qqPlot(retvale)
+```
+
+Pelo gráfico dos quantis normais gerado pelo qqPlot podemos ver a diferença gritante nas caudas causada pela enorme curtuse.
+
+------------------------------1)E----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 1 letra e\\
+Impacto da violação de Gaussianidade
+\end{center}
+```
+Quando ocorre a violação da Gaussianidade, os métodos tradicionais de estimação de risco, como a utilização do desvio padrão e da variância, podem subestimar o verdadeiro risco dos ativos ou portfólios. Isso acontece porque essas medidas são sensíveis a observações extremas, e se a distribuição dos retornos não for simétrica e tiver caudas grossas, os eventos extremos podem ocorrer com mais frequência do que o esperado pela distribuição normal.
+
+Uma abordagem mais adequada para lidar com a violação de Gaussianidade na estimação de risco é utilizar modelos estatísticos mais sofisticados, como modelos de volatilidade estocástica, modelos GARCH (Generalized Autoregressive Conditional Heteroskedasticity), modelos de distribuição de caudas pesadas (como a distribuição t de Student ou a distribuição de Cauchy), entre outros.
+
+Esses modelos levam em consideração as características específicas dos dados financeiros, como a volatilidade não constante ao longo do tempo e a presença de eventos extremos, permitindo uma melhor estimação do risco em condições de não-Gaussianidade.
+
+------------------------------2)A----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 2 letra a\\
+VaR Histórico
+\end{center}
+```
+As açoes escolhidas serão as mesmas
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+quantile(retpetr, probs = 0.05)
+```
+
+Para a petrobrás temos um VaR histórico de -0.03990156 , valor negativo do VaR Histórico indica que, com um nível de confiança de 95%, existe uma probabilidade de 5% de ocorrer uma perda igual ou superior a esse valor na carteira de investimentos em um único dia.
+
+Essa estimativa de risco sugere que, em cerca de 5% dos dias durante o período analisado, a carteira poderia ter enfrentado uma perda considerável, igual ou maior que -0.03990156. Isso é relevante, pois fornece uma medida quantitativa da exposição ao risco diário com um nível de confiança específico.
+
+No entanto, é importante ressaltar que o VaR Histórico tem suas limitações. Ele se baseia em dados históricos e pressupõe que as condições passadas se repetirão no futuro. Portanto, ele pode não ser eficaz na captura de eventos raros ou extremos que não ocorreram durante o período analisado. Além disso, o VaR Histórico é sensível à seleção do período de análise (aqui de aproximadamente 1300 dias), o que pode resultar em estimativas diferentes de risco.
+
+```{r}
+quantile(retvale, probs = 0.05)
+```
+
+Na Vale temos um resultado parecido, comparando com o valor anteriormente discutido, observamos que o VaR Histórico da Vale é menor, o que implica em um potencial de perda diária menor na carteira de investimentos. Em outras palavras, a estimativa de risco da Vale indica que a probabilidade de ocorrer uma perda significativa na carteira é menor em relação ao valor anterior.
+
+No entanto, as mesmas limitações e considerações mencionadas anteriormente também se aplicam aqui. O VaR Histórico é baseado em dados históricos e pressupõe que as condições passadas se repetirão no futuro. Portanto, ele pode não ser capaz de capturar eventos raros ou extremos que não ocorreram durante o período analisado. Além disso, é sensível à seleção do período de análise.
+
+------------------------------2)B----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 2 letra b\\
+VaR Gausiiano
+\end{center}
+```
+```{r}
+VaR(R = retpetr, p = 0.95, method = "gaussian")
+```
+
+Primeiramente para o caso da Petrobrás. O VaR Gaussiano, também conhecido como VaR Paramétrico, é uma medida de risco que assume uma distribuição normal para os retornos da carteira. Nessa abordagem, o VaR é calculado com base em uma fórmula paramétrica que utiliza a média e o desvio padrão dos retornos.
+
+O valor de -0.05025322 para o VaR Gaussiano indica que, com um nível de confiança de 95%, existe uma probabilidade de 5% de ocorrer uma perda igual ou superior a esse valor na carteira de investimentos em um único dia, assumindo uma distribuição normal para os retornos.
+
+A diferença entre o VaR Histórico (-0.03990156) e o VaR Gaussiano (-0.05025322) sugere que a abordagem paramétrica assumindo uma distribuição normal pode levar a uma estimativa mais conservadora do risco em comparação com o VaR Histórico. Nesse caso, o VaR Gaussiano indica uma potencial perda diária maior do que o VaR Histórico, considerando o mesmo nível de confiança.
+
+É importante ressaltar que a escolha entre o VaR Histórico e o VaR Gaussiano depende do contexto e das características dos dados da carteira de investimentos. O VaR Histórico utiliza diretamente os dados históricos, enquanto o VaR Gaussiano é baseado em uma suposição de normalidade que no caso dos retornos das ações selecionadas não é verdade. Sendo assim seria mais confiável utilizar o histórico, uma vez que, mesmo com os problemas de se basear em fatos passados, nenhuma distribuição é assumida.
+
+```{r}
+VaR(R = retvale, p = 0.95, method = "gaussian")
+```
+
+Agora no caso da Vale, temos novamente uma situação muito semelhante. O Var paramétrico assume a distribuição normal e, a um nível de confiança de 95%, coloca a probabilidade de 5% de haver uma perda maior ou igual a -0.04141585. Da mesma forma, não é certo assumir uma hipótese de distribuição normal, uma vez que os parâmetros da distribuição provam que ela nao se distribui dessa forma. Sendo assim o VaR histórico é mais uma vez uma melhor escolha quando comparado ao VaR paramétrico.
+
+------------------------------2)C----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 2 letra c\\
+VaR em distribuição adequada
+\end{center}
+```
+O primeiro passo será encontrar uma distribuição que consiga de forma pelo menos aceitavel explicar a distribuição dos retornos das ações escolhidas.
+
+```{r}
+qqPlot(retpetr, distribution = 't', df = 3)
+```
+
+Para a PETR4 uma distribuição t de student com 3 graus de liberdade é uma boa proxy.
+
+```{r}
+qqPlot(retvale, distribution = 't', df = 4)
+```
+
+Já para a VALE3 uma t de student com 4 graus de liberdade é uma boa proxy.
+
+Cabe destacar que, em ambos os casos, foram observados outliers que comprometem a aceitação da respectiva distribuição. No entanto, como foram outliers, não julguei ser algo que excluiria toda a distribuição.
+
+Aplicando agora o VaR para essas séries de retorno, considerando a distribuição t com os graus de liberdade já falados temos:
+
+```{r}
+VaR(retpetr, df = 3)
+```
+
+Para o caso da Petrobrás um VaR de -0.05067138, é esperada uma perda maior que no VaR histórico, porém menor que no VaR paramétrico.
+
+```{r}
+VaR(retvale, df = 4)
+```
+
+Para o caso da Vale um VaR de -0.03500197, é esperada uma perda maior que no método histórico, apesar de extremamente próxima, e menor que no método paramétrico.
+
+------------------------------2)D----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 2 letra d\\
+Comparando todos or resultados
+\end{center}
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Cálculo dos valores
+quant_05 <- quantile(retpetr, probs = 0.05)
+var_gaussian <- VaR(R = retpetr, p = 0.95, method = "gaussian")
+var_df3 <- VaR(retpetr, df = 3)
+st.fit = st.mple(y = retpetr)#ajusando dados para fazer screwt
+# Cálculo do VaR com nível de confiança de 95% usando a distribuição skew-t ajustada
+var_screwtpe = qst(.05, xi = st.fit$dp[1], omega = st.fit$dp[2], alpha = st.fit$dp[3], nu = st.fit$dp[4])
+
+# Criação do gráfico
+dfgrf <- data.frame(Objetos = c("VaR Hist", "VaR Gauss", "VaR t-st","screwt"),
+                 Valores = c(quant_05, var_gaussian, var_df3,var_screwtpe))
+
+# Criação do gráfico com ggplot2
+ggplot(dfgrf, aes(x = Valores, y = Objetos)) +
+  geom_point( size = 3) +
+  labs(x = "Método", y = "Valor") +
+   geom_text(aes(label = Objetos),  hjust = .5, vjust = -2, color = "black", size = 3) +
+  ggtitle("Comparação dos Valores") +
+  theme_update()
+```
+
+No caso da Petrobrás temos o gráfico acima mostrando a comparação entre cada um dos métodos. Foi adicionado o método do VaR utilizando uma distribuição screw-t para que pudessem ser comparados os valores. Houve grande proximodade entre o histórico e o screw-t, supõe-se, portanto, que os dados tem uma melhor adaptação à distribuição screw-t quando comparada com as demais.
+
+```{r}
+# Cálculo dos valores
+quant_05va <- quantile(retvale, probs = 0.05)
+var_gaussianva <- VaR(R = retvale, p = 0.95, method = "gaussian")
+var_df3va <- VaR(retvale, df = 4)
+st.fitva = st.mple(y = retvale)#ajusando dados para fazer screwt
+# Cálculo do VaR com nível de confiança de 95% usando a distribuição skew-t ajustada
+var_screwtva = qst(.05, xi = st.fitva$dp[1], omega = st.fitva$dp[2], alpha = st.fitva$dp[3], nu = st.fitva$dp[4])
+
+# Criação do gráfico
+dfgrf1 <- data.frame(Objetos = c("VaR Hist.", "VaR Gaus", "VaR t-st","screwt"),
+                 Valores = c(quant_05va, var_gaussianva, var_df3va,var_screwtva))
+
+# Criação do gráfico com ggplot2
+ggplot(dfgrf1, aes(x = Valores, y = Objetos )) +
+  geom_point( size = 3) +
+  labs(x = "Método", y = "Valor") +
+   geom_text(aes(label = Objetos), hjust = .5, vjust = -2, color = "black", size = 3) +
+  ggtitle("Comparação dos Valores") +
+  theme_update()
+```
+
+No caso da Vale temos novamente o gráfico mostrando relação entre os diferentes VaR, tmabém considerando a metodologia do VaR com uma screw-t. Aqui o resultado difere, uma vez que a similaridade se deu entre o histórico e o da t-student, supõe-se assim que a adaptação ocorre melhor para essa distribuição quando comparada as outras.
+
+------------------------------3)A----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 3 letra a\\
+Frinteira eficiente com shorts
+\end{center}
+```
+A fronteira eficiente é representada no gráfico abaixo, onde é permitido o uso de pesos negativos. Essa fronteira se estende ao longo de uma grande parte da região eficiente, mas ainda há uma certa influência na região ineficiente. Na fronteira está destacado em vermelho o portfólio de mínimo risco, que servem como uma divisão entre a fronteira eficiente e ineficiente.
+
+```{r}
+Ddsprova <- as.xts(Ddsprova)
+dados <- Ddsprova[,-c(1,22)]
+dados <- as.xts(dados)
+vetret <- as.list(seq(0,mean(dados$PETR4), length.out = 250))
+matcov <- cov(dados)
+rfr <- 0.0002644400
+listashort <- vector("list",length = length(vetret))
+
+for (i in 1:length(vetret)) {
+  peso <- vetret[i]
+  listashort[[i]] <- portfolio.optim(dados,
+                                pm = peso,
+                                riskless = FALSE,
+                                                rf = rfr, 
+                                                covmat = matcov,
+                                                shorts=T)
+}
+
+Riscoshort <- unlist(lapply(listashort, "[[", "ps"))
+Retornoshort <- unlist(lapply(listashort, "[[", "pm"))
+Portshort <- data.frame(Riscoshort,Retornoshort)
+
+port.minshorts <- data.frame(
+  x = Riscoshort[which.min(Portshort$Riscoshort)],
+  y = Retornoshort[which.min(Portshort$Riscoshort)]
+)
+
+ggplot(data = Portshort, aes(x = Riscoshort, y = Retornoshort)) +
+  geom_point() +
+  geom_point(data = port.minshorts, aes(x=x,y=y), color = "red") +
+   labs(x = "Risco", y = "Retorno dos Potifólios", title = "Fronteira")
+```
+
+------------------------------3)B----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 3 letra b\\
+Frinteira eficiente sem shorts
+\end{center}
+```
+
+No caso da fronteira sem a possibilidade de short-selling, podemos observar uma concentração muito maior na parte ineficiente. Novamente, o ponto vermelho indica o portfólio de mínimo risco, que serve como uma divisão entre a fronteira ineficiente e eficiente. Em geral, a grande diferença reside na restrição imposta pela impossibilidade de montar portfólios mais rentáveis. Essa restrição resultou no corte de uma parte da fronteira eficiente, limitando as opções de investimento e reduzindo a capacidade de maximizar os retornos.
+
+```{r}
+lista <- vector("list",length = length(vetret))
+
+for (i in 1:length(vetret)) {
+  peso <- vetret[i]
+  lista[[i]] <- portfolio.optim(dados,
+                                pm = peso,
+                                riskless = FALSE,
+                                                rf = rfr, 
+                                                covmat = matcov,
+                                                shorts=F)
+}
+
+Risco <- unlist(lapply(lista, "[[", "ps"))
+Retorno <- unlist(lapply(lista, "[[", "pm"))
+Port <- data.frame(Risco,Retorno)
+
+port.min <- data.frame(
+  x = Risco[which.min(Port$Risco)],
+  y = Retorno[which.min(Port$Risco)]
+)
+
+ggplot(data = Port, aes(x = Risco, y = Retorno)) +
+  geom_point() +
+  geom_point(data = port.min, aes(x=x,y=y), color = "red") +
+   labs(x = "Risco", y = "Retorno dos Potifólios", title = "Fronteira")
+```
+
+
+------------------------------4A)----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 4 letra a \\
+CAPM
+\end{center}
+```
+ Abaixo uma tabela com todos os resultados dos betas de cada modelo CAPM calculados com as ações selecionadas.
+ As ações escolhidas para comentario serão as mesmas das questoes anteriores: petr e vale.
+ Com um beta de 1.120, a Petrobras apresenta uma ação mais volátil em relação ao mercado. Isso significa que a empresa tende a ter movimentos de preços mais acentuados, sendo mais sensível às flutuações do mercado. Essa volatilidade pode ser atribuída a fatores específicos da indústria de energia e da própria Petrobras, como oscilações nos preços do petróleo e eventos macroeconômicos. Investidores devem estar cientes desse risco ao considerar investir na empresa, realizando uma análise abrangente que leve em conta outros indicadores financeiros e informações relevantes.
+ Já para o segundo caso temos  Vale, que possui um beta de 0.762, indicando uma ação menos volátil em relação ao mercado. Isso significa que os movimentos de preço da Vale tendem a ser mais suaves e menos sensíveis às flutuações do mercado.
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capmpetr <- data.frame((Ddsprova$PETR4 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capmpetr) <- c("Ri","Rm")
+CAPMpetr <- lm(capmpetr$Ri ~ capmpetr$Rm)
+BetaPETR4 <- coef(CAPMpetr)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$VALE3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaVALE3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$KEPL3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaKEPL3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$TASA3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaTASA3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$RENT3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaRENT3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$CRFB3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaCRFB3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$BOBR4 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaBOBR4 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$ABEV3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaABEV3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$BBAS3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaBBAS3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$BBDC3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaBBDC3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$ITUB3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaITUB3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$GGBR4 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaGGBR4 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$USIM3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaUSIM3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$BRKM3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaBRKM3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$PRIO3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaPRIO3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$RADL3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaRADL3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$FLRY3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaFLRY3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$SQIA3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaSQIA3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$EMBR3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaEMBR3 <- coef(CAPM)[2]
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+capm1 <- data.frame((Ddsprova$CPFE3 - Ddsprova$DI),(Ddsprova$IBOV - Ddsprova$DI))
+colnames(capm1) <- c("Ri","Rm")
+CAPM <- lm(capm1$Ri ~ capm1$Rm)
+BetaCPFE3 <- coef(CAPM)[2]
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+  betas <- c('BetaABEV3','BetaBBAS3','BetaBBDC3','BetaBOBR4','BetaBRKM3','BetaCRFB3','BetaFLRY3','BetaGGBR4','BetaITUB3','BetaKEPL3','BetaPETR4','BetaPRIO3','BetaRADL3','BetaRENT3','BetaTASA3','BetaUSIM3','BetaVALE3')
+    Valores <- c(BetaABEV3,BetaBBAS3,BetaBBDC3,BetaBOBR4,BetaBRKM3,BetaCRFB3,BetaFLRY3,BetaGGBR4,BetaITUB3,BetaKEPL3,BetaPETR4,BetaPRIO3,BetaRADL3,BetaRENT3,BetaTASA3,BetaUSIM3,BetaVALE3)
+    Betas <- data.frame(betas,Valores)
+    print(Betas)
+    hist(Betas$Valores)
+```
+
+
+------------------------------4B)----------------------------------------
+
+```{=tex}
+\begin  {center}
+\Large Questão 4 letra b \\
+Testando o CAPM
+\end{center}
+```
+
+```{r}
+test <- as.data.frame(Ddsprova)
+obj1 <- test[, 2:22]
+
+# Subtrair o valor da primeira coluna de cada linha
+obj2 <- obj1 - test$DI
+
+
+GRSrs <- GRS.test(obj2[,-21], obj2[,21])
+
+# Estatística GRS
+GRSrs$GRS.stat
+
+# Valor p do teste GRS
+GRSrs$GRS.pval
+
+```
+O resultado do teste GRS realizado apresentou um valor de p de 0.169203. Neste caso, como o valor de p é maior do que o nível de significância geralmente adotado de 0.05, não podemos rejeitar a hipótese nula.
+Esses resultados sugerem que não há evidências estatisticamente significantes para afirmar que o desempenho do modelo, conforme medido pela estatística GRS, é significativamente diferente de zero. Em outras palavras o modelo CAPM, a um nível de significância de 5%, será válido.
